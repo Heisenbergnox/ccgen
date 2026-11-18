@@ -1,6 +1,6 @@
 # ccgen — generating the CCD equations from second quantization
 
-Coupled-cluster equations get long quickly. The CCD amplitude equation, ten terms in the textbook form, becomes 125 separate `einsum` terms once written out, and CCSD and beyond grow much faster. ccgen derives them the way you would on paper, contraction by contraction with Wick's theorem, and writes them out as NumPy code that you can run and check.
+Coupled-cluster equations get long quickly, and CCSD and beyond grow much faster than CCD. ccgen derives them the way you would on paper, contraction by contraction with Wick's theorem, and writes them out as NumPy code that you can run and check.
 
 **Coming next:**
 - the CCSD equations, then CCSDT and EOM-CC (the energy expression and the factors for several T₁ and T₂ are already in place);
@@ -20,9 +20,22 @@ Coupled-cluster equations get long quickly. The CCD amplitude equation, ten term
 
 Water in STO-3G converges in 29 iterations to E_CCD = −0.0506409699 Eh. On 18 molecule/basis runs, the result agrees with the hand-written CCD of hf_to_cc to 1e-9 Eh.
 
+## Known limitation
+
+Like terms are not merged yet. Terms that are the same up to the names of the summed indices stay separate, and terms related by swapping i↔j or a↔b are not yet collected into the P(ij), P(ab) of the textbook form. So the CCD residual comes out as 125 `einsum` lines (1 + 8 + 18 + 98) instead of the textbook's ten terms. The result is correct, only longer and slower than it needs to be; merging like terms is next on the list.
+
 ## Usage
 
-Python 3 and NumPy. The integrals here come from [hf_to_cc](https://github.com/Heisenbergnox/hf_to_cc). The arrays use spin orbitals with the `N` occupied ones first, `g[p, q, r, s] = ⟨pq‖rs⟩` and `t[i, j, a, b] = t_ij^ab`.
+The example takes its integrals from [hf_to_cc](https://github.com/Heisenbergnox/hf_to_cc), so clone both repositories next to each other and install the dependencies:
+
+```
+git clone https://github.com/Heisenbergnox/hf_to_cc
+git clone https://github.com/Heisenbergnox/ccgen
+pip install numpy scipy pyscf
+cd ccgen
+```
+
+Then save the code below as, say, `run.py` and run it with `PYTHONPATH=../hf_to_cc python run.py`; it prints −0.0506409699 (Eh) and 29 (iterations). The arrays use spin orbitals with the `N` occupied ones first, `g[p, q, r, s] = ⟨pq‖rs⟩` and `t[i, j, a, b] = t_ij^ab`.
 
 ```python
 import numpy as np
@@ -35,6 +48,7 @@ E_hf, eps, C, n_scf = scf_diis(S, h, eri, E_nuc, N)
 mo, h_mo = ao2mo(C, eri, h)
 hso, g = spin_orbitals(mo, h_mo)
 E_ccd, n_iter = ccd(residual, np.diag(np.repeat(eps, 2)), g, N)
+print(E_ccd, n_iter)
 ```
 
 ## License
