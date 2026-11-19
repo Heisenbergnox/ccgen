@@ -4,37 +4,38 @@ from collections import defaultdict
 from itertools import combinations, permutations
 from math import factorial
 
+def make_ops(bra, H, Ts):
 
-ops0 = [
-    ("p", "+", "g", 1), ("q", "+", "g", 1), ("s", "-", "g", 1), ("r", "-", "g", 1),
-    ("c", "+", "v", 2), ("d", "+", "v", 2), ("l", "-", "o", 2), ("k", "-", "o", 2),
-]
+    opes = []
 
-ops_h = [
-    ("i", "+", "o", 0), ("j", "+", "o", 0), ("b", "-", "v", 0), ("a", "-", "v", 0),
-    ("p", "+", "g", 1), ("q", "+", "g", 1), ("s", "-", "g", 1), ("r", "-", "g", 1),
-]
-
-ops_ft = [
-    ("i", "+", "o", 0), ("j", "+", "o", 0), ("b", "-", "v", 0), ("a", "-", "v", 0),
-    ("p", "+", "g", 1), ("q", "-", "g", 1),
-    ("c", "+", "v", 2), ("d", "+", "v", 2), ("l", "-", "o", 2), ("k", "-", "o", 2),
-]
-
-ops_vt = [
-    ("i", "+", "o", 0), ("j", "+", "o", 0), ("b", "-", "v", 0), ("a", "-", "v", 0),
-    ("p", "+", "g", 1), ("q", "+", "g", 1), ("s", "-", "g", 1), ("r", "-", "g", 1),
-    ("c", "+", "v", 2), ("d", "+", "v", 2), ("l", "-", "o", 2), ("k", "-", "o", 2),
-]
-
-ops_vtt = [
-    ("i", "+", "o", 0), ("j", "+", "o", 0), ("b", "-", "v", 0), ("a", "-", "v", 0),
-    ("p", "+", "g", 1), ("q", "+", "g", 1), ("s", "-", "g", 1), ("r", "-", "g", 1),
-    ("c", "+", "v", 2), ("d", "+", "v", 2), ("l", "-", "o", 2), ("k", "-", "o", 2),
-    ("e", "+", "v", 3), ("f", "+", "v", 3), ("n", "-", "o", 3), ("m", "-", "o", 3),
-]
-
-ccd_parts = [ops_h, ops_ft, ops_vt, ops_vtt]
+    if bra == 1:
+        bra1 = ("i", "+", "o", 0), ("a", "-", "v", 0)
+        opes += (bra1)                   
+    if bra == 2:
+        bra2 = ("i", "+", "o", 0), ("j", "+", "o", 0), ("b", "-", "v", 0), ("a", "-", "v", 0)
+        opes += (bra2)
+    
+   
+    if H == "f":
+        Hf = ("p", "+", "g", 1), ("q", "-", "g", 1)
+        opes += (Hf)
+    else:
+        Hv = ("p", "+", "g", 1), ("q", "+", "g", 1), ("s", "-", "g", 1), ("r", "-", "g", 1)
+        opes += (Hv)
+    
+    loop = 0
+    oop = ["k", "l", "m", "n"]
+    vop = ["c", "d", "e", "f"]
+    for num, exc in enumerate(Ts):
+        if exc == 1:
+            exc1 = ((vop[num+loop], "+", "v", num+2), (oop[num+loop], "-", "o", num+2))
+            opes += (exc1)
+        if exc == 2:
+            exc2 = ((vop[num+loop], "+", "v", num+2), (vop[num+loop+1], "+", "v", num+2), (oop[num+loop+1], "-", "o", num+2), (oop[num+loop], "-", "o", num+2))
+            opes += (exc2)
+            loop += 1
+            
+    return opes
 
 
 def contraction(ops):
@@ -93,25 +94,26 @@ def rename_table(ops, pairs):
     return rename
 
 
-def get_factor_and_c(ops):
+def get_factor_and_c(ops_test2):
     factor = []
-    creoph = [op[0] for op in ops if op[1] == "+" and op[3] == 1]
-    anaoph = [op[0] for op in ops if op[1] == "-" and op[3] == 1]
+    creoph = [op[0] for op in ops_test2 if op[1] == "+" and op[3] == 1]
+    anaoph = [op[0] for op in ops_test2 if op[1] == "-" and op[3] == 1]
 
     if len(creoph) == 2:
         name = "g"
     else:
         name = "f"
-    c_H = factorial(len(creoph)) ** 2
+    c_H = factorial(len(creoph)) ** 2  
     get_f_ops = tuple(creoph + anaoph[::-1])
     factor.append((name, get_f_ops))
-
+    
     coe_H = Fraction(1, (c_H))
 
+    
     coet_list = []
     for i in range(2, 7):
-        creopt = [op[0] for op in ops if op[1] == "+" and op[3] == i]
-        anaopt = [op[0] for op in ops if op[1] == "-" and op[3] == i]
+        creopt = [op[0] for op in ops_test2 if op[1] == "+" and op[3] == i]
+        anaopt = [op[0] for op in ops_test2 if op[1] == "-" and op[3] == i]
 
         if len(creopt) == 0:
             continue
@@ -120,16 +122,30 @@ def get_factor_and_c(ops):
             name = "t_2"
         if len(creopt) == 1:
             name = "t_1"
-        c_t = factorial(len(creopt)) ** 2
+        c_t = factorial(len(creopt)) ** 2  
         get_f_ops = tuple(anaopt[::-1] + creopt)
         factor.append((name, get_f_ops))
-
+        
         coe_t = Fraction(1, (c_t))
         coet_list.append(coe_t)
 
-    coe = coe_H * math.prod(coet_list) * Fraction(1, factorial(len(coet_list)))
+       
+    coe = coe_H * math.prod(coet_list)
+    T2_n = 0
+    T1_n = 0
+    for j in coet_list:
+        if j == Fraction(1, 4):
+            T2_n +=1
+        if j == Fraction(1, 1):
+            T1_n += 1
+    if T2_n != 0:
+        coe *= Fraction(1, (factorial(T2_n)))
+    if T1_n != 0:
+        coe *= Fraction(1, (factorial(T1_n)))
 
+            
     return factor, coe
+
 
 
 def get_terms(ops):
@@ -175,14 +191,14 @@ def combine(term):
     return f_terms2
 
 
-def generate_einsum(f_terms2, ops):
+def generate_einsum(f_terms2, ops_test2):
     name2arr = {}
     lines = []
 
-    for op in ops:
-        name2arr[op[0]] = op[2]
-    cre1 = [op[0] for op in ops if op[1] == "+" and op[3] == 0]
-    ana1 = [op[0] for op in ops if op[1] == "-" and op[3] == 0]
+    for op in ops_test2:
+        name2arr[op[0]] = op[2] 
+    cre1 = [op[0] for op in ops_test2 if op[1] == "+" and op[3] == 0 ]
+    ana1 = [op[0] for op in ops_test2 if op[1] == "-" and op[3] == 0 ]
     out = "".join(cre1 + ana1[::-1])
 
     for factors, c in f_terms2.items():
@@ -190,18 +206,21 @@ def generate_einsum(f_terms2, ops):
         arr2 = []
         for name, idx in factors:
             subs1 = "".join(idx)
-            arr1 = ", ".join(name2arr[op] for op in idx)
-
-            if name == "t_1" or name == "t_2":
-                rhs = " t"
-            else:
+            arr1 =", ".join(name2arr[op] for op in idx)
+            
+            if name == "t_1":
+                rhs = " t1"
+            if name == "t_2":
+                rhs = " t2"
+            if name == "g" or name == "f":
                 rhs = f"{name}[{arr1}]"
             subs2.append(subs1)
             arr2.append(rhs)
 
+
         subs3 = ",".join(subs2)
         arr3 = ",".join(arr2)
-        lines.append(f"{float(c)} * np.einsum('{subs3}->{out}', {arr3})")
+        lines.append(f"{float(c)} * np.einsum('{subs3}->{out}', {arr3}, optimize=True)")
     return lines
 
 
