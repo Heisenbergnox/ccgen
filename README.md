@@ -22,10 +22,10 @@ E_\text{CCSD} = \langle \Phi_0 | \bar H | \Phi_0 \rangle = \sum_{ia} f_{ia}\, t_
 
 CCD (T = T₂) has one amplitude equation, $`0 = \langle \Phi_{ij}^{ab} | \bar H | \Phi_0 \rangle`$, and its energy is the CCSD energy without the terms that contain t₁.
 
-- `ccgen.py`: the generator. Each part of an equation, for example ⟨Φ_ij^ab| (V_N T₁ T₂)_c |Φ₀⟩, is a list of normal-ordered operators built by `make_ops(bra, h, ts)`: `bra` is the excitation level of the projection (0 for the energy, 1 for the T₁ equation, 2 for the T₂ equation), `h` is `"f"` or `"v"`, and `ts` lists the cluster operators, for example `[1, 2]` for T₁T₂. For each list the generator
+- `ccgen.py`: the generator. Each part of an equation, for example $`\langle \Phi_{ij}^{ab} | (V_N T_1 T_2)_c | \Phi_0 \rangle`$, is a list of normal-ordered operators built by `make_ops(bra, h, ts)`: `bra` is the excitation level of the projection (0 for the energy, 1 for the T₁ equation, 2 for the T₂ equation), `h` is `"f"` or `"v"`, and `ts` lists the cluster operators, for example `[1, 2]` for T₁T₂. For each list the generator
   1. finds the allowed, connected full contractions;
   2. takes each sign from the number of crossing lines;
-  3. renames the summed indices and attaches integrals, amplitudes and the coefficient: 1/(n!)² for each operator with n creators, times 1/k! for k equal cluster operators, from expanding e^T;
+  3. renames the summed indices and attaches integrals, amplitudes and the coefficient: 1/(n!)² for each operator with n creators, times 1/k! for k equal cluster operators, from expanding $`e^T`$;
   4. brings each term to a standard form and merges equal ones;
   5. writes one `einsum` line per term, with `optimize=True` so that NumPy contracts two arrays at a time.
 - `provided.py`: lists the parts of each equation and writes the generated code (`python provided.py`):
@@ -38,7 +38,7 @@ CCD (T = T₂) has one amplitude equation, $`0 = \langle \Phi_{ij}^{ab} | \bar H
 
 **Index letters** (spin orbitals): i, j, k, l, m, n are occupied; a, b, c, d, e, f are virtual; p, q, r, s run over all orbitals and are the Hamiltonian's indices before contraction. In a part, i, j, a, b belong to the projection and stay as the free indices of the result. The cluster operators use c–f and k–n, which are summed over.
 
-**Input format.** An operator is a tuple `(index, "+" or "-", space, group)`. The space is `"o"` (occupied), `"v"` (virtual) or `"g"` (general); the group says which operator it belongs to: 0 for the projection, 1 for the Hamiltonian, 2, 3, … for the cluster operators. For example `make_ops(2, "v", [2])`, the part ⟨Φ_ij^ab| (V_N T₂)_c |Φ₀⟩, is
+**Input format.** An operator is a tuple `(index, "+" or "-", space, group)`. The space is `"o"` (occupied), `"v"` (virtual) or `"g"` (general); the group says which operator it belongs to: 0 for the projection, 1 for the Hamiltonian, 2, 3, … for the cluster operators. For example `make_ops(2, "v", [2])`, the part $`\langle \Phi_{ij}^{ab} | (V_N T_2)_c | \Phi_0 \rangle`$, is
 
 ```
 [('i', '+', 'o', 0), ('j', '+', 'o', 0), ('b', '-', 'v', 0), ('a', '-', 'v', 0),
@@ -46,7 +46,7 @@ CCD (T = T₂) has one amplitude equation, $`0 = \langle \Phi_{ij}^{ab} | \bar H
  ('c', '+', 'v', 2), ('d', '+', 'v', 2), ('l', '-', 'o', 2), ('k', '-', 'o', 2)]
 ```
 
-Each part is one connected term of H̄ projected onto the bra of its equation, named by its operators: VT₁T₂ is the (V_N T₁ T₂)_c term, and VT₁² carries a factor ½ from expanding e^T. `provided.py` passes every combination of `"f"` or `"v"` with the cluster operators up to the order needed. Combinations without a connected full contraction give no terms, so nothing has to be picked out by hand. The parts that do give terms:
+Each part is one connected term of $`\bar H`$ projected onto the bra of its equation, named by its operators: VT₁T₂ is the $`(V_N T_1 T_2)_c`$ term, and VT₁² carries a factor ½ from expanding $`e^T`$. `provided.py` passes every combination of `"f"` or `"v"` with the cluster operators up to the order needed. Combinations without a connected full contraction give no terms, so nothing has to be picked out by hand. The parts that do give terms:
 
 | Equation | Parts (number of terms) | Total |
 |---|---|---|
@@ -72,7 +72,7 @@ which is the energy formula above, term by term.
 
 ## Results
 
-Water in STO-3G: CCD converges in 29 iterations to E_CCD = −0.0506409699 Eh, and CCSD in 33 iterations to E_CCSD = −0.0509029526 Eh; together they take under a second.
+Water in STO-3G: CCD converges in 29 iterations to −0.0506409699 Eh and CCSD in 33 iterations to −0.0509029526 Eh (correlation energies); together they take under a second.
 
 - CCSD: for 14 molecules in STO-3G, from H₂ to CH₃OH, the correlation energy agrees with PySCF's CCSD (converged to 1e-12) to within 1e-9 Eh, for most of them to about 1e-11 Eh. The largest differences (CO 6e-10, CO₂ 1e-10) come from the SCF orbitals: on PySCF's own orbitals, with the full Fock matrix, CO agrees to 5e-12 Eh.
 - CCSD in larger basis sets: water in 6-31G and cc-pVDZ also agrees with PySCF to about 1e-11 Eh; the cc-pVDZ run (24 basis functions) takes 9 s.
@@ -120,7 +120,7 @@ print(E_ccd, n_iter_ccd)
 print(E_ccsd, n_iter_ccsd)
 ```
 
-The arrays use spin orbitals with the `N` occupied ones first: `g[p, q, r, s] = ⟨pq‖rs⟩`, `t1[i, a] = t_i^a` and `t2[i, j, a, b] = t_ij^ab`. `f` is the Fock matrix in the same basis. For canonical Hartree–Fock orbitals it is diagonal, with the orbital energies on the diagonal, which is what `np.diag(np.repeat(eps, 2))` builds; the generated equations also take a full Fock matrix, including its occupied–virtual block.
+The arrays use spin orbitals with the `N` occupied ones first: `g[p, q, r, s]` is $`\langle pq \Vert rs \rangle`$, `t1[i, a]` is $`t_i^a`$ and `t2[i, j, a, b]` is $`t_{ij}^{ab}`$. `f` is the Fock matrix in the same basis. For canonical Hartree–Fock orbitals it is diagonal, with the orbital energies on the diagonal, which is what `np.diag(np.repeat(eps, 2))` builds; the generated equations also take a full Fock matrix, including its occupied–virtual block.
 
 ## License
 
